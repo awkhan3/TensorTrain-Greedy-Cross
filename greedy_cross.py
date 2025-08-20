@@ -17,6 +17,14 @@ def greedy_cross(u, fun, tol, nswp):
     :param tol: float
     :param nswp: int
     :return: list of 3D tensors (TT-cores)
+    
+    This procedure implements Algorithm 2 from 
+    D. Savostyanov, Quasioptimality of maximum-volume cross interpolation of tensors, Linear Algebra Applications 458, pp 217-244, 2014. 
+    http://dx.doi.org/10.1016/j.laa.2014.06.006
+
+    This code is inspired by the Matlab implementation https://github.com/oseledets/TT-Toolbox/blob/master/cross/greedy2_cross.m by S. Dolgov.
+
+    Implementation by: Abraham Khan.
     """
 
     factors = []
