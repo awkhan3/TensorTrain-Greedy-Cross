@@ -309,11 +309,34 @@ def init_cross_approximation(factors, u, fun):
     non_vec_fun = lambda X: fun(np.array(X).reshape(1, np.size(X)))
     idx = np.array([rng.integers(0, uk - 1) for uk in u], dtype=np.int64)
 
+    # start with random index
     for i in range(dim):
         ind_left.append(idx[:i+1].reshape(1, i+1 ))
         ind_right.append(idx[i+1:].reshape(1, dim - (i + 1)))
     ind_left.pop(-1)
     ind_right.pop(-1)
+
+    # now maximize
+    sweeps = 2
+    for _ in range(sweeps):
+        # backward pass
+        for ax in range(dim - 1, -1, -1):
+            n_ax = u[ax]
+            J = np.broadcast_to(idx, (n_ax, dim)).copy()
+            J[:, ax] = np.arange(n_ax)
+            vals = autovecfun(fun, J)
+            j_opt = int(np.argmax(np.abs(vals)))
+            if j_opt != idx[ax]:
+                idx[ax] = j_opt
+        # forward pass
+        for ax in range(dim):
+            n_ax = u[ax]
+            J = np.broadcast_to(idx, (n_ax, dim)).copy()
+            J[:, ax] = np.arange(n_ax)
+            vals = autovecfun(fun, J)
+            j_opt = int(np.argmax(np.abs(vals)))
+            if j_opt != idx[ax]:
+                idx[ax] = j_opt
 
     mid_inv = []
     for ind_selector in range(dim - 1):
@@ -344,6 +367,7 @@ def init_cross_approximation(factors, u, fun):
     factors.append(Cn)
 
     return ind_left, ind_right, factors, mid_inv, left_exl, right_exl
+
 
 def array_mesh(left, right, switch=True):
     if switch:
