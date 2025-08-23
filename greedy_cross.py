@@ -49,7 +49,7 @@ def greedy_cross(u, fun, tol, nswp):
         pre_factors.append([f1, f2])
 
     while True:
-        if flags == truth_flags and ind_selector >= dim - 1 and swp > 3:
+        if flags == truth_flags and ind_selector >= dim - 1:
             print("|sweep|: ", swp, "|max_error|: ", max(max_dx_lst))
             return form_tt(factors, mid_inv)
         if swp >= nswp:
