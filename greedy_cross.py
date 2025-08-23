@@ -86,8 +86,8 @@ def greedy_cross(u, fun, tol, nswp):
             max_dx_lst[ind_selector] = 1E-16
             ind_selector = ind_selector + 1
             continue
-        # if the approximate error of the super-core is less than tol, then stop
-        if max_dx_lst[ind_selector] < tol:
+        # if the approximate error of the super-core is less than or equal to tol, then stop
+        if max_dx_lst[ind_selector] <= tol:
             flags[ind_selector] = True
             ind_selector = ind_selector + 1
             continue
