@@ -1,2 +1,5 @@
 # TensorTrain-Greedy-Cross
-Python implementation of Algorithm 2 in [Quasioptimality of maximum-volume cross interpolation of tensors](https://www.sciencedirect.com/science/article/pii/S0024379514003711). The code only depends on Numpy, and this code can be used in your project simply by dropping the greedy_cross.py file into your project directory. The code itself is inspired by the [Matlab implementation](https://github.com/oseledets/TT-Toolbox/blob/master/cross/greedy2_cross.m). 
+Python implementation of Algorithm 2 in [Quasioptimality of maximum-volume cross interpolation of tensors](https://www.sciencedirect.com/science/article/pii/S0024379514003711). The code is inspired by the following [Matlab Implementation] (https://github.com/oseledets/TT-Toolbox/blob/master/cross/greedy2_cross.m). Since the code only depends on Numpy, using it in your project simply requires dropping the file greedy_cross.py into your project directory.
+
+
+
