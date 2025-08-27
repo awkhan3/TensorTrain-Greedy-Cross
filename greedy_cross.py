@@ -296,7 +296,7 @@ def random_error_check(left, right, yl, yr, fun, max_eval, left_exl, right_exl):
         max_j = np.argmax(np.abs(err21))
         err_diff = abs(err21[max_j])
     # pick the new max_eval
-    new_max_eval = max([abs(max_eval), abs(np.max(y_vec1)), abs(np.max(y_vec2))])
+    new_max_eval = max(abs(max_eval), np.max(np.abs(y_vec1)), np.max(np.abs(y_vec2)))
     return err_diff, new_max_eval, max_i, max_j
 
 def init_cross_approximation(factors, u, fun):
