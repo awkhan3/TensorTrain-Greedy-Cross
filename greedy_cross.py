@@ -337,6 +337,9 @@ def init_cross_approximation(factors, u, fun):
             j_opt = int(np.argmax(np.abs(vals)))
             if j_opt != idx[ax]:
                 idx[ax] = j_opt
+                
+    ind_left  = [idx[:i+1].reshape(1, i+1) for i in range(dim-1)]
+    ind_right = [idx[i+1:].reshape(1, dim-(i+1)) for i in range(dim-1)]
 
     mid_inv = []
     for ind_selector in range(dim - 1):
