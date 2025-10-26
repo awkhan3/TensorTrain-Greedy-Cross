@@ -7,24 +7,16 @@ def greedy_cross(u, fun, tol, nswp):
     Obtain the TT-approximation of the tensor A defined by the following entries
     A_{i_1, i_2, ..., i_n} = fun(i_1, i_2, ..., i_n),
     where 0 \le i_j \le u_j and u = [u_1, u_2, ..., u_n].
-    Ideally, approximation satisfies 
+    Ideally, approximation satisfies
     \|TT_approx(A) - A\|_{C} \le \|A\|_{C}*tol.
-    The logging of the metrics of this function can be silenced by commenting out line 44. 
+    The logging of the metrics of this function can be silenced by commenting out line 44.
 
     :param u: list
-    :param fun: vectorized function f (takes as input a matrix M \in \R^{num_evals x n} where each row 
-    is an evaluation and the columns are indicies, and outputs a vector of evaluations for each row) 
+    :param fun: vectorized function f (takes as input a matrix M \in \R^{num_evals x n} where each row
+    is an evaluation and the columns are indicies, and outputs a vector of evaluations for each row)
     :param tol: float
     :param nswp: int
-    :return: list of 3D tensors (TT-cores)
-    
-    This procedure implements Algorithm 2 from 
-    D. Savostyanov, Quasioptimality of maximum-volume cross interpolation of tensors, Linear Algebra Applications 458, pp 217-244, 2014. 
-    http://dx.doi.org/10.1016/j.laa.2014.06.006
-
-    This code is inspired by the Matlab implementation https://github.com/oseledets/TT-Toolbox/blob/master/cross/greedy2_cross.m by S. Dolgov.
-
-    Implementation by: Abraham Khan.
+    :return: List of 3D tensors (TT-cores)
     """
 
     factors = []
@@ -50,11 +42,12 @@ def greedy_cross(u, fun, tol, nswp):
 
     while True:
         if flags == truth_flags and ind_selector >= dim - 1:
-            print("|sweep|: ", swp, "|max_error|: ", max(max_dx_lst))
+ #           print("|sweep|: ", swp, "|max_error|: ", max(max_dx_lst))
             return form_tt(factors, mid_inv)
         if swp >= nswp:
             return form_tt(factors, mid_inv)
         if ind_selector >= dim - 1:
+#            print("|sweep|: ", swp, "|max_error|: ", max(max_dx_lst))
             ind_selector = 0
             swp = swp + 1
 
@@ -79,15 +72,15 @@ def greedy_cross(u, fun, tol, nswp):
             new_i, new_j, new_err, new_max_eval = get_new_cross(fun, I_le_ind, I_gr_ind, yl, yr, u[ind_selector],
                                                                 u[ind_selector + 1], max_eval,
                                                                 ind_left_exl[ind_selector], ind_right_exl[ind_selector])
-            max_eval = max(max_eval, new_max_eval)
+            max_eval = max(np.abs(max_eval), np.abs(new_max_eval))
             max_dx_lst[ind_selector] = new_err / max_eval
         else: # else, the super-core is already full-rank
             flags[ind_selector] = True
             max_dx_lst[ind_selector] = 1E-16
             ind_selector = ind_selector + 1
             continue
-        # if the approximate error of the super-core is less than or equal to tol, then stop
-        if max_dx_lst[ind_selector] <= tol:
+        # if the approximate error of the super-core is less than tol, then stop
+        if max_dx_lst[ind_selector] < tol:
             flags[ind_selector] = True
             ind_selector = ind_selector + 1
             continue
@@ -257,13 +250,13 @@ def random_error_check(left, right, yl, yr, fun, max_eval, left_exl, right_exl):
     left_sample = np.flatnonzero(left_mask)
     right_sample = np.flatnonzero(right_mask)
 
-    # Use Floyd's algorithm to take samples.
+    # Use Floyd's algorithm to take Samples.
     num_samples = min(np.size(left_sample), np.size(right_sample))
     samples = rng.choice(np.size(left_sample) * np.size(right_sample), num_samples, replace=False)
     ind_mat = np.array(np.unravel_index(samples, [np.size(left_sample), np.size(right_sample)]))
     left_sample = left_sample[ind_mat[0, :]]
     right_sample = right_sample[ind_mat[1, :]]
-    # left samples and right samples are arrays of sample of len nr
+
     ind_mat1 = np.concatenate((left[left_sample, :], right[right_sample, :]), axis=1)
     y_vec1 = autovecfun(fun, ind_mat1)
     z = np.einsum('ij, ij->i', yl[left_sample, :], np.transpose(yr[:, right_sample]))
@@ -297,6 +290,7 @@ def random_error_check(left, right, yl, yr, fun, max_eval, left_exl, right_exl):
         err_diff = abs(err21[max_j])
     # pick the new max_eval
     new_max_eval = max(abs(max_eval), np.max(np.abs(y_vec1)), np.max(np.abs(y_vec2)))
+
     return err_diff, new_max_eval, max_i, max_j
 
 def init_cross_approximation(factors, u, fun):
@@ -307,39 +301,42 @@ def init_cross_approximation(factors, u, fun):
     right_exl = []
     num_crosses = 1
     non_vec_fun = lambda X: fun(np.array(X).reshape(1, np.size(X)))
-    idx = np.array([rng.integers(0, uk - 1) for uk in u], dtype=np.int64)
 
-    # start with random index
+    # start with a random index.
+    idx = np.array([rng.integers(0, uk) for uk in u], dtype=np.int64)
+    # Now maximize w.r.t the random index.
+    num_sweeps = 2
+    for i in range(num_sweeps):
+        # Begin forward sweep.
+        for i in range(dim - 1):
+            if i < 1:
+                left = np.arange(u[i]).reshape(u[i], 1)
+            else:
+                left = array_mesh(idx[:i].reshape(1, -1), np.arange(u[i]).reshape(u[i], 1))
+            right = idx[i+1:].reshape(1, -1)
+            J = array_mesh(left, right)
+            evals = autovecfun(fun, J)
+            i_max = int(np.argmax(np.abs(evals)))
+            idx[i] =  i_max
+        # Begin backward sweep.
+        for i in range(dim-1, 0, -1):
+            if i >= dim - 1:
+                right = np.arange(u[i]).reshape(u[i], 1)
+            else:
+                right = array_mesh(np.arange(u[i]).reshape(u[i], 1), idx[i+1:].reshape(1, -1), False)
+            left = idx[:i].reshape(1, -1)
+            J = array_mesh(left, right, False)
+            evals = autovecfun(fun, J)
+            j_max = int(np.argmax(np.abs(evals)))
+            idx[i] = j_max
+
+    # Now we can init the ind_left and ind_right lists.
     for i in range(dim):
         ind_left.append(idx[:i+1].reshape(1, i+1 ))
         ind_right.append(idx[i+1:].reshape(1, dim - (i + 1)))
     ind_left.pop(-1)
     ind_right.pop(-1)
 
-    # now maximize
-    sweeps = 2
-    for _ in range(sweeps):
-        # backward pass
-        for ax in range(dim - 1, -1, -1):
-            n_ax = u[ax]
-            J = np.broadcast_to(idx, (n_ax, dim)).copy()
-            J[:, ax] = np.arange(n_ax)
-            vals = autovecfun(fun, J)
-            j_opt = int(np.argmax(np.abs(vals)))
-            if j_opt != idx[ax]:
-                idx[ax] = j_opt
-        # forward pass
-        for ax in range(dim):
-            n_ax = u[ax]
-            J = np.broadcast_to(idx, (n_ax, dim)).copy()
-            J[:, ax] = np.arange(n_ax)
-            vals = autovecfun(fun, J)
-            j_opt = int(np.argmax(np.abs(vals)))
-            if j_opt != idx[ax]:
-                idx[ax] = j_opt
-                
-    ind_left  = [idx[:i+1].reshape(1, i+1) for i in range(dim-1)]
-    ind_right = [idx[i+1:].reshape(1, dim-(i+1)) for i in range(dim-1)]
 
     mid_inv = []
     for ind_selector in range(dim - 1):
@@ -371,7 +368,12 @@ def init_cross_approximation(factors, u, fun):
 
     return ind_left, ind_right, factors, mid_inv, left_exl, right_exl
 
-
+# This function meshes two index sets together in the following fashion.
+# Assume switch is True. Let, left = np.array([1, 2, 3, 4]).reshape(1,-1) and
+# right = np.array([1,2,3]).reshape(-1, 1) . Then, we return the following array
+# np.array([[1,2,3,4,1],[1,2,3,4,2], [1,2,3,4,3] ]). Assume switch is False.
+# Then, the process is repeated in a conformal way where right is fixed and left
+# is varied.
 def array_mesh(left, right, switch=True):
     if switch:
         r = left.shape[0]
@@ -421,3 +423,4 @@ def form_tt(factors, mid_inv):
         core = np.reshape(core, (r1, n, r2))
         cores.append(core)
     return cores
+
