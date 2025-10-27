@@ -42,12 +42,12 @@ def greedy_cross(u, fun, tol, nswp):
 
     while True:
         if flags == truth_flags and ind_selector >= dim - 1:
- #           print("|sweep|: ", swp, "|max_error|: ", max(max_dx_lst))
+            print("|sweep|: ", swp, "|max_error|: ", max(max_dx_lst))
             return form_tt(factors, mid_inv)
         if swp >= nswp:
             return form_tt(factors, mid_inv)
         if ind_selector >= dim - 1:
-#            print("|sweep|: ", swp, "|max_error|: ", max(max_dx_lst))
+            print("|sweep|: ", swp, "|max_error|: ", max(max_dx_lst))
             ind_selector = 0
             swp = swp + 1
 
